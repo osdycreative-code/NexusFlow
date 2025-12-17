@@ -1,5 +1,6 @@
 
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import * as React from 'react';
+import { useState, useEffect, createContext, useContext } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { TaskList } from './components/TaskList';
 import { TaskDetail } from './components/TaskDetail';
