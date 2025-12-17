@@ -1,0 +1,208 @@
+
+
+export enum TaskStatus {
+  TODO = 'To Do',
+  IN_PROGRESS = 'In Progress',
+  DONE = 'Done',
+}
+
+export enum TaskPriority {
+  LOW = 'Low',
+  MEDIUM = 'Medium',
+  HIGH = 'High',
+  URGENT = 'Urgent',
+}
+
+export enum BlockType {
+  PARAGRAPH = 'paragraph',
+  HEADING_1 = 'heading_1',
+  HEADING_2 = 'heading_2',
+  HEADING_3 = 'heading_3',
+  TODO = 'todo',
+  BULLET = 'bullet',
+  CODE = 'code', 
+  IMAGE = 'image',
+}
+
+export enum CustomFieldType {
+  TEXT = 'text',
+  NUMBER = 'number',
+  SELECT = 'select',
+  URL = 'url',
+}
+
+export interface CustomFieldDefinition {
+  id: string;
+  name: string;
+  type: CustomFieldType;
+  options?: string[]; // For select type
+}
+
+export enum ViewMode {
+  LIST = 'list',
+  BOARD = 'board',
+  CALENDAR = 'calendar',
+}
+
+// New Enum for Module Types
+export enum ModuleType {
+  TASKS = 'tasks',
+  INVENTORY = 'inventory',
+  DIRECTORY = 'directory',
+  STUDIO = 'studio',
+  PROJECTS = 'projects',
+  FINANCE = 'finance',
+  APP_GENERATOR = 'app_generator',
+  FOLDERS = 'folders',
+}
+
+export interface Block {
+  id: string;
+  type: BlockType;
+  content: string;
+  checked?: boolean; // For TODO blocks
+  metadata?: any; // For image URLs or code language
+}
+
+export interface Subtask {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
+export interface Task {
+  id: string;
+  listId: string;
+  projectId?: string; // New: Link task to a project
+  title: string;
+  description?: string; // Legacy simple description
+  contentBlocks: Block[]; // The Notion-like content
+  subtasks: Subtask[]; // Checklist items
+  status: TaskStatus;
+  priority: TaskPriority;
+  assigneeId?: string;
+  dueDate?: Date;
+  reminder?: Date; // New: Reminder timestamp
+  reminderFired?: boolean; // New: Flag to prevent duplicate alerts
+  customFieldValues: Record<string, any>; // JSONB storage for values: { fieldId: value }
+  createdAt: Date;
+}
+
+export interface List {
+  id: string;
+  spaceId: string;
+  name: string;
+  color: string;
+  type: ModuleType; // Identifies if this is a Task List, Inventory, etc.
+  customFields: CustomFieldDefinition[]; // Schema definition (primarily for Tasks)
+}
+
+export interface Space {
+  id: string;
+  name: string;
+  icon: string;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  avatar: string;
+}
+
+// --- Notification System ---
+export interface AppNotification {
+    id: string;
+    title: string;
+    message: string;
+    timestamp: Date;
+    read: boolean;
+    type: 'reminder' | 'system';
+    linkTaskId?: string;
+}
+
+// --- New Modules Types ---
+
+export interface Product {
+  id: string;
+  name: string;
+  sku: string;
+  stockCount: number;
+  price: number;
+  description: string;
+}
+
+export interface AITool {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  url: string;
+  isApiAvailable: boolean;
+  costModel: 'Free' | 'Freemium' | 'Paid';
+}
+
+export enum ProjectStatus {
+  PLANNING = 'Planning',
+  ACTIVE = 'Active',
+  ON_HOLD = 'On Hold',
+  COMPLETED = 'Completed',
+}
+
+export interface Project {
+  id: string;
+  listId: string; // Links project to a specific space module
+  name: string;
+  description: string;
+  status: ProjectStatus;
+  startDate: Date;
+  endDate: Date;
+  progress: number; // 0-100
+  ownerId: string;
+  customFieldValues: Record<string, any>; // Flexible storage for user-defined fields
+}
+
+export interface ProjectTemplate {
+  id: string;
+  name: string; // Template name
+  description: string;
+  customFieldValues: Record<string, any>;
+}
+
+// --- Finance Module Types ---
+
+export enum TransactionType {
+  INCOME = 'income',
+  EXPENSE = 'expense',
+}
+
+export interface FinanceTransaction {
+  id: string;
+  listId: string;
+  description: string;
+  contact?: string; // New: Contact/Payee name
+  amount: number;
+  type: TransactionType;
+  date: Date;
+  category: string;
+}
+
+// --- Folders Module Types ---
+
+export enum FolderItemType {
+  FOLDER = 'folder',
+  DOCUMENT = 'document',
+  FILE = 'file',
+  NOTE = 'note',
+  TASK = 'task'
+}
+
+export interface FolderItem {
+  id: string;
+  listId: string;
+  parentId: string | null; // null means root of the module
+  name: string;
+  type: FolderItemType;
+  updatedAt: Date;
+  size?: string; // e.g. "2 MB" for files, or block count for docs
+  url?: string; // For uploaded files (mock storage URL)
+}
