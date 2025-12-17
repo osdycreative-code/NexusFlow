@@ -652,7 +652,7 @@ const App: React.FC = () => {
                 <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
                         <span className="font-bold text-gray-800 text-sm">{currentToast.title}</span>
-                        <button onClick={() => setCurrentToast(null)} className="text-gray-400 hover:text-gray-600">
+                        <button onClick={() => setCurrentToast(null)} className="text-gray-400 hover:text-gray-600" aria-label="Close notification">
                             <X size={14} />
                         </button>
                     </div>
