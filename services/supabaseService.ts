@@ -13,7 +13,9 @@ export const TABLES = {
   TEMPLATES: 'project_templates',
   TRANSACTIONS: 'transactions',
   FOLDER_ITEMS: 'folder_items',
-  NOTIFICATIONS: 'notifications'
+  NOTIFICATIONS: 'notifications',
+  BOOKS: 'books',
+  CHAPTERS: 'chapters'
 };
 
 export const supabaseService = {

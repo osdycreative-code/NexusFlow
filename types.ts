@@ -54,6 +54,7 @@ export enum ModuleType {
   FINANCE = 'finance',
   APP_GENERATOR = 'app_generator',
   FOLDERS = 'folders',
+  BOOKS = 'books',
 }
 
 export interface Block {
@@ -205,4 +206,35 @@ export interface FolderItem {
   updatedAt: Date;
   size?: string; // e.g. "2 MB" for files, or block count for docs
   url?: string; // For uploaded files (mock storage URL)
+}
+
+// --- Books Module Types ---
+
+export enum BookStatus {
+  DRAFT = 'draft',
+  PUBLISHED = 'published',
+  ARCHIVED = 'archived'
+}
+
+export interface Book {
+  id: string;
+  listId: string;
+  title: string;
+  author: string;
+  genre: string;
+  description: string;
+  coverImage?: string; // URL
+  status: BookStatus;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Chapter {
+  id: string;
+  bookId: string;
+  title: string;
+  content: string; // Could be HTML or markdown
+  order: number;
+  createdAt: Date;
+  updatedAt: Date;
 }

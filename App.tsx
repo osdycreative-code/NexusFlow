@@ -12,7 +12,31 @@ import { FinanceView } from './components/FinanceView';
 import { AppGeneratorView } from './components/AppGeneratorView';
 import { FoldersView } from './components/FoldersView';
 import { DashboardView } from './components/DashboardView';
-import { LoginPage } from './components/LoginPage';
+import { BooksView } from './components/BooksView';
+
+// ... (in renderMainContent)
+
+      switch(activeList.type) {
+          case ModuleType.INVENTORY:
+              return <InventoryView />;
+          case ModuleType.DIRECTORY:
+              return <AIDirectoryView />;
+          case ModuleType.STUDIO:
+              return <CreativeStudio />;
+          case ModuleType.PROJECTS:
+              return <ProjectsView />;
+          case ModuleType.FINANCE:
+              return <FinanceView />;
+          case ModuleType.APP_GENERATOR:
+              return <AppGeneratorView />;
+          case ModuleType.FOLDERS:
+              return <FoldersView />;
+          case ModuleType.BOOKS:
+              return <BooksView />;
+          case ModuleType.TASKS:
+          default:
+              return <TaskList />;
+      }
 import { Space, List, Task, TaskStatus, TaskPriority, BlockType, Product, AITool, ModuleType, Project, ProjectTemplate, FinanceTransaction, FolderItem, FolderItemType, AppNotification } from './types';
 import { Bell, X, Loader2 } from 'lucide-react';
 import { supabaseService, TABLES } from './services/supabaseService';
