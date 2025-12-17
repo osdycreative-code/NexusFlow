@@ -13,34 +13,14 @@ import { AppGeneratorView } from './components/AppGeneratorView';
 import { FoldersView } from './components/FoldersView';
 import { DashboardView } from './components/DashboardView';
 import { BooksView } from './components/BooksView';
+import { LoginPage } from './components/LoginPage';
 
-// ... (in renderMainContent)
 
-      switch(activeList.type) {
-          case ModuleType.INVENTORY:
-              return <InventoryView />;
-          case ModuleType.DIRECTORY:
-              return <AIDirectoryView />;
-          case ModuleType.STUDIO:
-              return <CreativeStudio />;
-          case ModuleType.PROJECTS:
-              return <ProjectsView />;
-          case ModuleType.FINANCE:
-              return <FinanceView />;
-          case ModuleType.APP_GENERATOR:
-              return <AppGeneratorView />;
-          case ModuleType.FOLDERS:
-              return <FoldersView />;
-          case ModuleType.BOOKS:
-              return <BooksView />;
-          case ModuleType.TASKS:
-          default:
-              return <TaskList />;
-      }
 import { Space, List, Task, TaskStatus, TaskPriority, BlockType, Product, AITool, ModuleType, Project, ProjectTemplate, FinanceTransaction, FolderItem, FolderItemType, AppNotification } from './types';
 import { Bell, X, Loader2 } from 'lucide-react';
 import { supabaseService, TABLES } from './services/supabaseService';
 import { supabase } from './services/supabaseClient';
+
 
 // Simple Store Context
 interface StoreContextType {
@@ -358,9 +338,34 @@ const App: React.FC = () => {
       if(newLists.length > 0) setActiveListId(newLists[0].id);
 
       // Async Persist
-      supabaseService.addItem(TABLES.SPACES, newSpace).then(() => {
-          newLists.forEach(l => supabaseService.addItem(TABLES.LISTS, l));
-      });
+      // Async Persist
+      supabaseService.addItem(TABLES.SPACES, newSpace)
+          .then(() => {
+              // Create lists only if space creation succeeds
+              Promise.all(newLists.map(l => supabaseService.addItem(TABLES.LISTS, l)))
+                  .catch(err => {
+                       console.error("Failed to persist lists", err);
+                       // Partial failure: space exists, lists don't. 
+                       // In a real app we might want to retry or alert.
+                  });
+          })
+          .catch(err => {
+              console.error("Failed to create space in DB", err);
+              // Rollback Optimistic Update
+              setSpaces(prev => prev.filter(s => s.id !== newSpaceId));
+              setLists(prev => prev.filter(l => l.spaceId !== newSpaceId));
+              if (activeSpaceId === newSpaceId) setActiveSpaceId(DASHBOARD_VIEW_ID);
+              
+              setCurrentToast({
+                  id: crypto.randomUUID(),
+                  title: 'Error',
+                  message: 'Failed to create space. Please try again.',
+                  timestamp: new Date(),
+                  read: false,
+                  type: 'system'
+              });
+              setTimeout(() => setCurrentToast(null), 5000);
+          });
   };
 
   const updateSpace = (spaceId: string, updates: Partial<Space>) => {
@@ -631,6 +636,8 @@ const App: React.FC = () => {
               return <AppGeneratorView />;
           case ModuleType.FOLDERS:
               return <FoldersView />;
+          case ModuleType.BOOKS:
+              return <BooksView />;
           case ModuleType.TASKS:
           default:
               return <TaskList />;

@@ -3,8 +3,8 @@ import React, { useContext, useState, useEffect } from 'react';
 import { StoreContext } from '../App';
 import { BlockEditor } from './BlockEditor';
 import { generateTaskContent } from '../services/geminiService';
-import { X, Calendar, Flag, User as UserIcon, CheckSquare, Sparkles, Loader2, Plus, Type, Hash, Link as LinkIcon, List as ListIcon, Trash2, Download, Book, Bell, Clock, GripVertical } from 'lucide-react';
-import { TaskStatus, TaskPriority, CustomFieldType, Subtask } from '../types';
+import { X, Calendar, Flag, User as UserIcon, CheckSquare, Sparkles, Loader2, Plus, Type, Hash, Link as LinkIcon, List as ListIcon, Trash2, Download, Book, Bell, Clock, GripVertical, MessageSquare, Send, CornerDownRight } from 'lucide-react';
+import { TaskStatus, TaskPriority, CustomFieldType, Subtask, Comment } from '../types';
 
 export const TaskDetail: React.FC = () => {
   const { tasks, activeTaskId, setActiveTaskId, updateTask, lists, updateList, deleteTask } = useContext(StoreContext);
@@ -14,6 +14,7 @@ export const TaskDetail: React.FC = () => {
   const [newFieldType, setNewFieldType] = useState<CustomFieldType>(CustomFieldType.TEXT);
   const [isSettingReminder, setIsSettingReminder] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+  const [newComment, setNewComment] = useState('');
   
   // Drag and Drop State for Subtasks
   const [draggedSubtaskIndex, setDraggedSubtaskIndex] = useState<number | null>(null);
@@ -228,8 +229,112 @@ export const TaskDetail: React.FC = () => {
   };
 
   const subtasks = task.subtasks || [];
-  const completedSubtasks = subtasks.filter(s => s.completed).length;
+  const completedSubtasks = subtasks.filter(s => s.completed).length; // Only counts top level for now or recursive? sticking to simple for progress bar
   const progress = subtasks.length > 0 ? Math.round((completedSubtasks / subtasks.length) * 100) : 0;
+
+  // -- Recursive Subtask Helpers --
+  const updateSubtaskRecursive = (subtasks: Subtask[], targetId: string, transform: (s: Subtask) => Subtask): Subtask[] => {
+      return subtasks.map(s => {
+          if (s.id === targetId) return transform(s);
+          if (s.subtasks) return { ...s, subtasks: updateSubtaskRecursive(s.subtasks, targetId, transform) };
+          return s;
+      });
+  };
+
+  const deleteSubtaskRecursive = (subtasks: Subtask[], targetId: string): Subtask[] => {
+      return subtasks.filter(s => s.id !== targetId).map(s => ({
+          ...s,
+          subtasks: s.subtasks ? deleteSubtaskRecursive(s.subtasks, targetId) : undefined
+      }));
+  };
+  
+  const addSubSubtask = (parentId: string, title: string) => {
+      const newSub: Subtask = { id: crypto.randomUUID(), title, completed: false, subtasks: [] };
+      const updated = updateSubtaskRecursive(task.subtasks || [], parentId, (s) => ({
+          ...s,
+          subtasks: [...(s.subtasks || []), newSub]
+      }));
+      updateTask(task.id, { subtasks: updated });
+  };
+
+  const handleToggleRecursive = (id: string) => {
+      const updated = updateSubtaskRecursive(task.subtasks || [], id, s => ({ ...s, completed: !s.completed }));
+      updateTask(task.id, { subtasks: updated });
+  };
+
+  const handleDeleteRecursive = (id: string) => {
+      const updated = deleteSubtaskRecursive(task.subtasks || [], id);
+      updateTask(task.id, { subtasks: updated });
+  };
+
+  const handleAddComment = (e: React.FormEvent) => {
+      e.preventDefault();
+      if(!newComment.trim()) return;
+      
+      const comment: Comment = {
+          id: crypto.randomUUID(),
+          taskId: task.id,
+          userId: 'user-1', // Mock user
+          content: newComment,
+          createdAt: new Date()
+      };
+      
+      updateTask(task.id, { comments: [...(task.comments || []), comment] });
+      setNewComment('');
+  };
+
+  const SubtaskItem = ({ item, depth = 0 }: { item: Subtask, depth?: number }) => {
+     const [isreplying, setIsReplying] = useState(false);
+     const [replyTitle, setReplyTitle] = useState('');
+
+     const handleReply = (e: React.FormEvent) => {
+         e.preventDefault();
+         if(replyTitle.trim()) {
+             addSubSubtask(item.id, replyTitle);
+             setReplyTitle('');
+             setIsReplying(false);
+         }
+     }
+
+     return (
+         <div className={`mb-1 ${depth > 0 ? 'ml-6 border-l border-gray-200 pl-2' : ''}`}>
+             <div className="group flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors">
+                <button 
+                     onClick={() => handleToggleRecursive(item.id)}
+                     className={`flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-colors ${item.completed ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-gray-300 hover:border-indigo-400 bg-white'}`}
+                 >
+                     {item.completed && <CheckSquare size={10} strokeWidth={4} />}
+                 </button>
+                 <span className={`flex-1 text-sm transition-all ${item.completed ? 'text-gray-400 line-through opacity-80 decoration-gray-400 decoration-1' : 'text-gray-700'}`}>
+                     {item.title}
+                 </span>
+                 <button onClick={() => setIsReplying(!isreplying)} className="text-gray-300 hover:text-indigo-500 opacity-0 group-hover:opacity-100 transition-all p-1" title="Add sub-task">
+                     <CornerDownRight size={14} />
+                 </button>
+                 <button onClick={() => handleDeleteRecursive(item.id)} className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-1">
+                     <Trash2 size={14} />
+                 </button>
+             </div>
+             
+             {isreplying && (
+                 <form onSubmit={handleReply} className="ml-8 mt-1 flex items-center gap-2">
+                     <input 
+                        autoFocus 
+                        type="text" 
+                        value={replyTitle}
+                        onChange={e => setReplyTitle(e.target.value)}
+                        placeholder="Sub-task title..." 
+                        className="text-xs bg-gray-50 border-gray-200 rounded px-2 py-1 w-full focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                     />
+                 </form>
+             )}
+
+             {item.subtasks?.map(sub => (
+                 <SubtaskItem key={sub.id} item={sub} depth={depth + 1} />
+             ))}
+         </div>
+     );
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/20 backdrop-blur-sm" onClick={() => setActiveTaskId(null)}>
@@ -469,37 +574,11 @@ export const TaskDetail: React.FC = () => {
                     )}
 
                     <div className="space-y-1 mb-3">
+                    <div className="space-y-1 mb-3">
                         {subtasks.map((subtask, index) => (
-                            <div 
-                                key={subtask.id} 
-                                draggable
-                                onDragStart={(e) => handleDragStart(e, index)}
-                                onDragOver={(e) => handleDragOver(e, index)}
-                                onDrop={(e) => handleDrop(e, index)}
-                                className={`group flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors border border-transparent 
-                                    ${draggedSubtaskIndex === index ? 'opacity-40 bg-gray-50 border-dashed border-gray-300' : ''}
-                                `}
-                            >
-                                <div className="cursor-move text-gray-300 hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <GripVertical size={14} />
-                                </div>
-                                <button 
-                                    onClick={() => toggleSubtask(subtask.id)}
-                                    className={`flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-colors ${subtask.completed ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-gray-300 hover:border-indigo-400 bg-white'}`}
-                                >
-                                    {subtask.completed && <CheckSquare size={10} strokeWidth={4} />}
-                                </button>
-                                <span className={`flex-1 text-sm transition-all ${subtask.completed ? 'text-gray-400 line-through opacity-80 decoration-gray-400 decoration-1' : 'text-gray-700'}`}>
-                                    {subtask.title}
-                                </span>
-                                <button 
-                                    onClick={() => deleteSubtask(subtask.id)}
-                                    className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-1"
-                                >
-                                    <Trash2 size={14} />
-                                </button>
-                            </div>
+                            <SubtaskItem key={subtask.id} item={subtask} />
                         ))}
+                    </div>
                     </div>
                     
                     <form onSubmit={handleAddSubtask} className="flex items-center gap-3 p-2 pl-9">
@@ -527,6 +606,50 @@ export const TaskDetail: React.FC = () => {
                         blocks={task.contentBlocks} 
                         onChange={(newBlocks) => updateTask(task.id, { contentBlocks: newBlocks })} 
                     />
+                </div>
+                
+                <hr className="border-gray-100 mb-8" />
+
+                {/* Comments Section */}
+                <div>
+                     <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
+                        <MessageSquare size={16} /> Comments
+                    </h3>
+                    
+                    <div className="space-y-4 mb-6">
+                        {(task.comments || []).map(comment => (
+                            <div key={comment.id} className="flex gap-3 text-sm">
+                                <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold shrink-0 text-xs">
+                                    US
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-semibold text-gray-900">User</span>
+                                        <span className="text-xs text-gray-400">{new Date(comment.createdAt).toLocaleString()}</span>
+                                    </div>
+                                    <p className="text-gray-600 mt-0.5">{comment.content}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <form onSubmit={handleAddComment} className="flex gap-3">
+                        <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-300 font-bold shrink-0 text-xs">
+                            ME
+                        </div>
+                        <div className="flex-1 relative">
+                            <input 
+                                type="text"
+                                value={newComment}
+                                onChange={e => setNewComment(e.target.value)}
+                                placeholder="Write a comment..."
+                                className="w-full bg-gray-50 border-gray-200 rounded-lg py-2 pl-3 pr-10 text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                            <button type="submit" disabled={!newComment.trim()} className="absolute right-2 top-1.5 text-indigo-600 hover:text-indigo-800 disabled:opacity-50 p-1">
+                                <Send size={16} />
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

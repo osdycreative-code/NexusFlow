@@ -1,6 +1,6 @@
 import React, { useContext, useState, useRef, useEffect } from 'react';
 import { StoreContext, DASHBOARD_VIEW_ID } from '../App';
-import { Settings, Bell, Search, PlusCircle, Hexagon, Package, BrainCircuit, Palette, Layout, ChevronDown, ChevronRight, Plus, X, CheckSquare, FolderKanban, Banknote, Code2, FolderOpen, Trash2, Clock, LayoutDashboard, MoreVertical, Cog, LogOut } from 'lucide-react';
+import { Settings, Bell, Search, PlusCircle, Hexagon, Package, BrainCircuit, Palette, Layout, ChevronDown, ChevronRight, Plus, X, CheckSquare, FolderKanban, Banknote, Code2, FolderOpen, Trash2, Clock, LayoutDashboard, MoreVertical, Cog, LogOut, BookOpen } from 'lucide-react';
 import { ModuleType } from '../types';
 
 export const Sidebar: React.FC = () => {
@@ -67,6 +67,7 @@ export const Sidebar: React.FC = () => {
           case ModuleType.FINANCE: return <Banknote size={16} />;
           case ModuleType.APP_GENERATOR: return <Code2 size={16} />;
           case ModuleType.FOLDERS: return <FolderOpen size={16} />;
+          case ModuleType.BOOKS: return <BookOpen size={16} />;
           default: return <Layout size={16} />;
       }
   };
@@ -106,7 +107,8 @@ export const Sidebar: React.FC = () => {
       { type: ModuleType.INVENTORY, label: 'Inventory', icon: Package, desc: 'Product tracking' },
       { type: ModuleType.DIRECTORY, label: 'AI Directory', icon: BrainCircuit, desc: 'Tool curation' },
       { type: ModuleType.STUDIO, label: 'Creative Studio', icon: Palette, desc: 'Generative AI' },
-      { type: ModuleType.APP_GENERATOR, label: 'App Generator', icon: Code2, desc: 'Code Boilerplates' }
+      { type: ModuleType.APP_GENERATOR, label: 'App Generator', icon: Code2, desc: 'Code Boilerplates' },
+      { type: ModuleType.BOOKS, label: 'Books', icon: BookOpen, desc: 'Write & Publish' }
   ];
 
   return (

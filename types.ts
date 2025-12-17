@@ -69,6 +69,15 @@ export interface Subtask {
   id: string;
   title: string;
   completed: boolean;
+  subtasks?: Subtask[]; // Recursive for nested subtasks
+}
+
+export interface Comment {
+    id: string;
+    taskId: string;
+    userId: string; // Author
+    content: string;
+    createdAt: Date;
 }
 
 export interface Task {
@@ -86,6 +95,7 @@ export interface Task {
   reminder?: Date; // New: Reminder timestamp
   reminderFired?: boolean; // New: Flag to prevent duplicate alerts
   customFieldValues: Record<string, any>; // JSONB storage for values: { fieldId: value }
+  comments?: Comment[];
   createdAt: Date;
 }
 

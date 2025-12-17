@@ -15,7 +15,8 @@ export const TABLES = {
   FOLDER_ITEMS: 'folder_items',
   NOTIFICATIONS: 'notifications',
   BOOKS: 'books',
-  CHAPTERS: 'chapters'
+  CHAPTERS: 'chapters',
+  COMMENTS: 'task_comments'
 };
 
 export const supabaseService = {
